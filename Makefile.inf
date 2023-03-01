@@ -4,7 +4,7 @@ TITLE="OWRT-1-wire-protocol"
 
 PKG_NAME="OWRT-1-wire-protocol"
 PKG_VERSION="0.1"
-PKG_RELEASE=4
+PKG_RELEASE=5
 PKG_DEPENDS=OWRT-log owfs ubus-0.1.1 python3
 
 CONF_FILES=owrt-1wire-protocol
