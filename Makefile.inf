@@ -1,0 +1,59 @@
+SECTION="NetPing modules"
+CATEGORY="Base"
+TITLE="OWRT-1-wire-protocol"
+
+PKG_NAME="OWRT-1-wire-protocol"
+PKG_VERSION="0.1"
+PKG_RELEASE=2
+PKG_DEPENDS=OWRT-log owfs ubus-0.1.1 python3
+
+CONF_FILES=owrt-1wire-protocol
+CONF_DIR=/etc/config/
+
+ETC_FILES=owrt-1wire-protocol.py
+ETC_FILES_DIR=/etc/netping/$(PKG_NAME)/
+
+TESTS_SRC_DIR=Tests
+
+AUTORUN_FILES=owrt-1wire-protocol-autorun
+
+INSTALL_DIR=
+
+.PHONY: all install
+
+all: build preinstall install configure
+
+ipk: build install
+
+build:
+	@echo "Nothing to do"
+
+preinstall:
+	@echo "Nothing to do"
+
+configure:
+	@echo "Nothing to do"
+
+install:
+ifneq ($(INSTALL_DIR),)
+	mkdir -p $(INSTALL_DIR)/etc/init.d
+	mkdir -p $(INSTALL_DIR)/etc/rc.d
+endif
+	mkdir -p $(INSTALL_DIR)$(CONF_DIR)
+	for f in $(CONF_FILES); do cp $${f} $(INSTALL_DIR)$(CONF_DIR); done
+	mkdir -p $(INSTALL_DIR)$(ETC_FILES_DIR)
+	for f in $(ETC_FILES); do cp etc/$${f} $(INSTALL_DIR)$(ETC_FILES_DIR); done
+	cp -r $(TESTS_SRC_DIR) $(INSTALL_DIR)$(ETC_FILES_DIR)
+	for f in $(AUTORUN_FILES); do cp $${f} $(INSTALL_DIR)/etc/init.d; done
+	mv $(INSTALL_DIR)/etc/init.d/owrt-1wire-protocol-autorun $(INSTALL_DIR)/etc/init.d/owrt-1wire-protocol
+	ln -s ../init.d/owrt-1wire-protocol $(INSTALL_DIR)/etc/rc.d/S90OWRT-1wire-protocol
+
+clean:
+ifeq ($(INSTALL_DIR),)
+	for f in $(CONF_FILES); do rm -f $(CONF_DIR)$${f}; done
+	rm -rf $(ETC_FILES_DIR)
+	rm -f /etc/init.d/owrt-1wire-protocol
+	rm -f /etc/rc.d/S90OWRT-1wire-protocol
+else
+	rm -rf $(INSTALL_DIR)
+endif
