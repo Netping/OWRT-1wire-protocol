@@ -4,6 +4,7 @@ import sys
 import time         # TODO: check->delete
 import signal
 import subprocess
+from journal import journal
 
 fl_run_main = True
 dir_owfs = "/mnt/owfs/"
@@ -11,7 +12,7 @@ dir_owfs = "/mnt/owfs/"
 
 def stop_run(signum, frame):
     global fl_run_main
-# TODO:    journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Received termination signal!")
+    journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Received termination signal!")
     fl_run_main = False
 
 
@@ -19,13 +20,14 @@ signal.signal(signal.SIGTERM, stop_run)
 
 
 if __name__ == '__main__':
+
     try:
         result = subprocess.run(["owfs", "--fake=10,22", "-m", dir_owfs], check=True)
     except subprocess.CalledProcessError:
-        # завершение с ошибкой
-        # TODO: journal--error
-        print("except CalledProcessError")
+        journal.WriteLog("OWRT-1-wire-protocol", "Normal", "err", "Failed run OWFS")
         sys.exit(-1)
+
+    journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Start module!")
 
 #    list_dir = os.listdir(dir_owfs)
 #    for name_dir in list_dir:
@@ -37,13 +39,10 @@ if __name__ == '__main__':
 
     try:
         while fl_run_main:
-            print("Vasya")
             time.sleep(3)
     except KeyboardInterrupt:
         pass
     finally:
-# TODO:        journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Stop module!")
-        print("OWRT-1-wire-protocol -- Stop module!")
+        journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Stop module!")
 
     subprocess.run(["killall", "owfs"])
-    print("killall owfs")
