@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import os
 import sys
-import time         # TODO: check->delete
 import signal
 import subprocess
 from journal import journal
+
+try:
+    import ubus
+except ImportError:
+    journal.WriteLog("OWRT-1-wire-protocol", "Normal", "err", "Failed import ubus")
+    sys.exit(-1)
 
 fl_run_main = True
 dir_owfs = "/mnt/owfs/"
@@ -41,15 +46,42 @@ def get_list_1wire(dir_mnt):
     return ret_val, dev_1wire
 
 
+def ubus_init():
+    def get_1wire_list_callback(event, data):
+        ret_val = {}
+        lisst_dev = ['othel', 'test', 'Good']
+
+        ret_val["unit"] = lisst_dev
+
+        event.reply(ret_val)
+
+    ubus.add(
+        'owrt-1wire-dev', {
+            'get_1wire_list': {
+                'method': get_1wire_list_callback,
+                'signature': {
+                    'ubus_rpc_session': ubus.BLOBMSG_TYPE_STRING
+                }
+            }
+        }
+    )
+
+
 if __name__ == '__main__':
+    if not ubus.connect("/var/run/ubus.sock"):
+        journal.WriteLog("OWRT-1-wire-protocol", "Normal", "err", "Failed connect to ubus")
+        sys.exit(-1)
 
     try:
         result = subprocess.run(["owfs", "--fake=10,22", "-m", dir_owfs], check=True)
     except (FileNotFoundError, subprocess.CalledProcessError):
         journal.WriteLog("OWRT-1-wire-protocol", "Normal", "err", "Failed run OWFS")
+        ubus.disconnect()
         sys.exit(-1)
 
     journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Start module!")
+
+    ubus_init()
 
     ret_val, list_1wire = get_list_1wire(dir_owfs)
     if ret_val:
@@ -58,10 +90,11 @@ if __name__ == '__main__':
 
     try:
         while fl_run_main:
-            time.sleep(3)
+            ubus.loop(1)
     except KeyboardInterrupt:
         pass
     finally:
         journal.WriteLog("OWRT-1-wire-protocol", "Normal", "notice", "Stop module!")
 
     subprocess.run(["killall", "owfs"])
+    ubus.disconnect()
